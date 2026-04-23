@@ -2,7 +2,7 @@
 from flask import Flask
 from flask_cors import CORS
 import logging
-from config import LOG_LEVEL, SECRET_KEY, CLOVA_HOST, CLOVA_API_KEY, CLOVA_PRIMARY_KEY, CLOVA_REQUEST_ID
+from config import LOG_LEVEL, SECRET_KEY, CLOVA_HOST, CLOVA_API_KEY, CLOVA_PRIMARY_KEY, CLOVA_REQUEST_ID, MAX_MEMORY_LENGTH
 from setup import initialize
 from db import init_db, close_db
 from routes.auth import auth_bp
@@ -10,6 +10,9 @@ from routes.chat import chat_bp
 from routes.admin import admin_bp
 from models.vector_store_manager import VectorStoreManager
 from models.completion_executor import CompletionExecutor
+from services.adapters import CompletionExecutorClient, VectorStoreContextProvider
+from services.chat_service import ChatService
+from services.conversation_store import FlaskSessionConversationStore
 
 # 초기 설정 및 로드
 all_example_questions, model_presets = initialize()
@@ -39,6 +42,15 @@ completion_executor = CompletionExecutor(
     request_id=CLOVA_REQUEST_ID
 )
 app.config['COMPLETION_EXECUTOR'] = completion_executor
+app.config['CONVERSATION_STORE'] = FlaskSessionConversationStore()
+app.config['CONTEXT_PROVIDER'] = VectorStoreContextProvider(vector_store_manager)
+app.config['LLM_CLIENT'] = CompletionExecutorClient(completion_executor)
+app.config['CHAT_SERVICE'] = ChatService(
+    app.config['CONTEXT_PROVIDER'],
+    app.config['LLM_CLIENT'],
+    app.config['CONVERSATION_STORE'],
+    MAX_MEMORY_LENGTH,
+)
 
 # 블루프린트 등록
 app.register_blueprint(auth_bp)
