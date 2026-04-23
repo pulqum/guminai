@@ -5,6 +5,51 @@ from flask import g
 from config import config
 from datetime import datetime
 
+
+def _ensure_column(conn, table_name, column_name, column_ddl):
+    cursor = conn.cursor()
+    cursor.execute(f'PRAGMA table_info({table_name})')
+    columns = [row[1] for row in cursor.fetchall()]
+    if column_name not in columns:
+        cursor.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_ddl}')
+
+
+def _infer_flair(board, title, content):
+    text = f"{title} {content}"
+    if any(keyword in text for keyword in ['속보', '재난', '시위', '폭로', '논란', '갈등']):
+        return '속보'
+    if any(keyword in text for keyword in ['ㅋㅋ', '밈', '짤', '유머', '뻘글', '드립']):
+        return '유머'
+    if any(keyword in text for keyword in ['질문', '도움', '문의', '어떻게']):
+        return '질문'
+    if any(keyword in text for keyword in ['정보', '정리', '공유', '후기']):
+        return '정보'
+    if board in ['정치']:
+        return '토론'
+    if board in ['주식/경제']:
+        return '시장'
+    if board in ['과학/학문']:
+        return '연구'
+    if board in ['여행/문화']:
+        return '후기'
+    return '일반'
+
+
+def _seed_post_metrics(board, title, content):
+    base = 0
+    hot_keywords = ['속보', '논란', '갈등', '재난', '시위', '밈', '짤', '유머', '토론']
+    for keyword in hot_keywords:
+        if keyword in title:
+            base += 4
+        if keyword in content:
+            base += 2
+    if board in ['정치', '주식/경제']:
+        base += 3
+    upvote_count = max(0, min(base + len(title) // 10, 99))
+    downvote_count = 0
+    view_count = max(5, upvote_count * 12 + len(content) // 20)
+    return upvote_count, downvote_count, view_count
+
 def get_db():
     """
     데이터베이스 연결을 가져오는 함수
@@ -46,6 +91,10 @@ def init_db():
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 source_topic TEXT,
+                flair TEXT,
+                upvote_count INTEGER DEFAULT 0,
+                downvote_count INTEGER DEFAULT 0,
+                view_count INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -81,6 +130,10 @@ def init_db():
                 FOREIGN KEY (target_id) REFERENCES agents(id)
             )
         ''')
+        _ensure_column(conn, 'community_posts', 'flair', 'TEXT')
+        _ensure_column(conn, 'community_posts', 'upvote_count', 'INTEGER DEFAULT 0')
+        _ensure_column(conn, 'community_posts', 'downvote_count', 'INTEGER DEFAULT 0')
+        _ensure_column(conn, 'community_posts', 'view_count', 'INTEGER DEFAULT 0')
         conn.commit()
     except Exception as e:
         logging.error(f"데이터베이스 초기화 중 오류 발생: {e}")
@@ -111,12 +164,14 @@ def save_community_post(board, author_name, title, content, source_topic=None):
     try:
         db = get_db()
         cursor = db.cursor()
+        flair = _infer_flair(board, title, content)
+        upvote_count, downvote_count, view_count = _seed_post_metrics(board, title, content)
         cursor.execute(
             '''
-            INSERT INTO community_posts (board, author_name, title, content, source_topic)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO community_posts (board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
-            (board, author_name, title, content, source_topic),
+            (board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count),
         )
         db.commit()
         return cursor.lastrowid
@@ -125,32 +180,47 @@ def save_community_post(board, author_name, title, content, source_topic=None):
         return None
 
 
-def get_recent_community_posts(limit=30, board=None):
+def get_recent_community_posts(limit=30, board=None, sort='latest'):
     """
     최근 커뮤니티 게시글을 조회하는 함수
     """
     try:
         db = get_db()
         cursor = db.cursor()
+        order_clause = 'ORDER BY created_at DESC, id DESC'
+        if sort == 'best':
+            order_clause = 'ORDER BY upvote_count DESC, view_count DESC, created_at DESC, id DESC'
         if board:
-            cursor.execute(
-                '''
-                SELECT id, board, author_name, title, content, source_topic, created_at
-                FROM community_posts
-                WHERE board = ?
-                ORDER BY created_at DESC, id DESC
-                LIMIT ?
-                ''',
-                (board, limit),
-            )
+            if board == '자유':
+                query = f'''
+                    SELECT id, board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count, created_at
+                    FROM community_posts
+                    WHERE board IN ('자유', '통합 광장')
+                    {order_clause}
+                    LIMIT ?
+                    '''
+                cursor.execute(query, (limit,))
+            else:
+                query = f'''
+                    SELECT id, board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count, created_at
+                    FROM community_posts
+                    WHERE board = ?
+                    {order_clause}
+                    LIMIT ?
+                    '''
+                cursor.execute(
+                    query,
+                    (board, limit),
+                )
         else:
-            cursor.execute(
-                '''
-                SELECT id, board, author_name, title, content, source_topic, created_at
+            query = f'''
+                SELECT id, board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count, created_at
                 FROM community_posts
-                ORDER BY created_at DESC, id DESC
+                {order_clause}
                 LIMIT ?
-                ''',
+                '''
+            cursor.execute(
+                query,
                 (limit,),
             )
         rows = cursor.fetchall()
@@ -276,3 +346,101 @@ def get_agent_relation(source_id, target_id):
     except Exception as e:
         logging.error(f"에이전트 관계 조회 중 오류 발생: {e}")
         return None
+
+
+def get_community_post(post_id):
+    """단일 커뮤니티 게시글 조회"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            '''
+            SELECT id, board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count, created_at
+            FROM community_posts
+            WHERE id = ?
+            ''',
+            (post_id,),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 단건 조회 중 오류 발생: {e}")
+        return None
+
+
+def increment_community_post_view(post_id):
+    """게시글 조회수를 1 증가"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('UPDATE community_posts SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?', (post_id,))
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 조회수 증가 중 오류 발생: {e}")
+        return False
+
+
+def vote_community_post(post_id, vote_type):
+    """게시글 추천/비추천 반영"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        if vote_type == 'up':
+            cursor.execute('UPDATE community_posts SET upvote_count = COALESCE(upvote_count, 0) + 1 WHERE id = ?', (post_id,))
+        else:
+            cursor.execute('UPDATE community_posts SET downvote_count = COALESCE(downvote_count, 0) + 1 WHERE id = ?', (post_id,))
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 투표 반영 중 오류 발생: {e}")
+        return False
+
+
+def get_community_post(post_id):
+    """단일 커뮤니티 게시글 조회"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            '''
+            SELECT id, board, author_name, title, content, source_topic, flair, upvote_count, downvote_count, view_count, created_at
+            FROM community_posts
+            WHERE id = ?
+            ''',
+            (post_id,),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 단건 조회 중 오류 발생: {e}")
+        return None
+
+
+def increment_community_post_view(post_id):
+    """게시글 조회수를 1 증가"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('UPDATE community_posts SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?', (post_id,))
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 조회수 증가 중 오류 발생: {e}")
+        return False
+
+
+def vote_community_post(post_id, vote_type):
+    """게시글 추천/비추천 반영"""
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        if vote_type == 'up':
+            cursor.execute('UPDATE community_posts SET upvote_count = COALESCE(upvote_count, 0) + 1 WHERE id = ?', (post_id,))
+        else:
+            cursor.execute('UPDATE community_posts SET downvote_count = COALESCE(downvote_count, 0) + 1 WHERE id = ?', (post_id,))
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 투표 반영 중 오류 발생: {e}")
+        return False

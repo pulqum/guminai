@@ -11,9 +11,11 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
             margin: 0;
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
         }
         .page-container {
-            max-width: 1680px;
+            width: min(1800px, calc(100vw - 24px));
             margin: 0 auto;
             background: white;
             min-height: 100vh;
@@ -24,11 +26,16 @@
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        .main-banner-link {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
         .header-top {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
         .logo {
             font-size: 28px;
@@ -38,6 +45,7 @@
             display: flex;
             gap: 15px;
             font-size: 14px;
+            flex-wrap: wrap;
         }
         .nav-pill {
             cursor: pointer;
@@ -58,11 +66,68 @@
             background: white;
             color: #667eea;
         }
+        .board-directory {
+            margin: 14px 20px 0;
+            padding: 14px 16px 6px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fcfcfd;
+        }
+        .board-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 6px 0 10px;
+            border-bottom: 1px dashed #edf0f4;
+            flex-wrap: wrap;
+        }
+        .board-group:last-child {
+            border-bottom: 0;
+        }
+        .board-group-label {
+            min-width: 120px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            padding-top: 2px;
+        }
+        .board-chip-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .board-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid #d7dce3;
+            background: #fff;
+            color: #334155;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .board-chip.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
         .control-panel {
             background: #f9f9f9;
             border: 1px solid #e0e0e0;
             padding: 15px;
-            margin: 15px;
+            margin: 16px 20px;
             border-radius: 8px;
         }
         .control-section {
@@ -108,16 +173,16 @@
             font-size: 12px;
         }
         .posts-section {
-            padding: 20px;
+            padding: 0 20px 24px;
         }
         .posts-section.wide {
-            padding-left: 28px;
-            padding-right: 28px;
+            padding-left: 20px;
+            padding-right: 20px;
         }
         .posts-title {
-            font-size: 16px;
+            font-size: 17px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin: 8px 0 14px;
             color: #333;
         }
         .posts-table {
@@ -151,6 +216,7 @@
         }
         .col-num { width: 50px; text-align: center; }
         .col-tag { width: 50px; }
+        .col-board { width: 120px; }
         .col-title { flex-grow: 1; }
         .col-author { width: 100px; }
         .col-time { width: 70px; text-align: center; }
@@ -263,19 +329,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px 10px;
+            padding: 0 0 10px;
             color: #444;
             font-size: 14px;
         }
         .board-banner strong {
-            font-size: 18px;
+            font-size: 19px;
         }
         .detail-shell {
             background: #fff;
             border: 1px solid #e8e8e8;
             border-radius: 10px;
-            margin: 0 20px 20px;
-            padding: 24px;
+            margin: 0 20px 24px;
+            padding: 22px 24px 24px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         }
         .detail-head {
@@ -306,6 +372,8 @@
             display: flex;
             gap: 12px;
             margin-top: 22px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
         .detail-actions a,
         .detail-actions button {
@@ -317,23 +385,109 @@
             text-decoration: none;
             color: #333;
         }
+        .detail-actions form {
+            margin: 0;
+        }
+        .detail-comments {
+            margin-top: 24px;
+            border-top: 1px solid #eee;
+            padding-top: 18px;
+        }
+        .detail-comments h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+        .comment-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .comment-meta {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .comment-box {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+        }
+        .comment-box input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+        .news-strip {
+            margin: 12px 20px 0;
+            padding: 12px 14px;
+            color: #334155;
+            font-size: 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        .news-strip strong {
+            color: #0f172a;
+        }
+        .sort-row {
+            margin: 12px 20px 0;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .sort-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-right: 4px;
+        }
+        .content-stack {
+            padding-top: 6px;
+        }
     </style>
 </head>
 <body>
     <div class="page-container">
         <!-- 헤더 -->
         <div class="main-header">
-            <div class="header-top">
-                <div class="logo">🏛️ 수민마루</div>
-                <div class="nav-pills">
-                    <span class="nav-pill active"><a href="{{ url_for('community.community_page') }}">베스트</a></span>
-                    <span class="nav-pill"><a href="{{ url_for('community.community_board', board_name='통합 광장') }}">최신순</a></span>
-                    <span class="nav-pill"><a href="{{ url_for('community.community_board', board_name='성내구') }}">지역별</a></span>
-                    <span class="nav-pill"><a href="{{ url_for('community.community_board', board_name='직장인') }}">직업별</a></span>
+            <a class="main-banner-link" href="{{ url_for('community.community_page') }}">
+                <div class="header-top">
+                    <div class="logo">🏛️ 수민마루</div>
                 </div>
-            </div>
+            </a>
         </div>
 
+        <div class="sort-row">
+            <span class="sort-label">정렬</span>
+            <span class="nav-pill {% if active_sort == 'best' %}active{% endif %}"><a href="{{ url_for('community.community_page') }}">베스트</a></span>
+            <span class="nav-pill {% if active_sort == 'latest' %}active{% endif %}"><a href="{{ url_for('community.community_latest') }}">최신순</a></span>
+        </div>
+
+        <div class="board-directory">
+            {% for group_name, group_boards in board_groups.items() %}
+            <div class="board-group">
+                <div class="board-group-label">{{ group_name }}</div>
+                <div class="board-chip-row">
+                    {% for board in group_boards %}
+                        <a class="board-chip {% if board == active_board %}active{% endif %}" href="{{ url_for('community.community_board', board_name=board, sort='best') }}">{{ board }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="news-strip">
+            <strong>📰 오늘의 뉴스:</strong> [속보] 민의당, 제4차 침전 마나 배출 규제 관련 행정부 지침안 발표
+        </div>
+
+        {% if not detail_only %}
         <!-- 컨트롤 패널 -->
         <div class="control-panel">
             <div class="control-section">
@@ -374,68 +528,103 @@
                 </div>
             </div>
         </div>
-
-        <!-- 게시글 목록 -->
-        <div class="posts-section wide">
-            <div class="board-banner">
-                <strong>⚖️ {{ active_board }}</strong>
-                <span>게시글 {{ posts|length }}개</span>
-            </div>
-            <div class="posts-title">📰 게시글 목록</div>
-            <table class="posts-table">
-                <thead>
-                    <tr>
-                        <th class="col-num">번호</th>
-                        <th class="col-tag">말머리</th>
-                        <th class="col-title">제목</th>
-                        <th class="col-author">작성자</th>
-                        <th class="col-time">시간</th>
-                        <th class="col-views">조회</th>
-                        <th class="col-like">추천</th>
-                    </tr>
-                </thead>
-                <tbody id="posts-tbody">
-                    {% for post in posts %}
-                        <tr onclick="location.href='{{ url_for('community.community_post_detail', post_id=post.id) }}'">
-                            <td class="col-num">{{ posts|length - loop.index0 }}</td>
-                            <td class="col-tag"><span class="tag">{{ post.board[:2] }}</span></td>
-                            <td class="col-title">{{ post.title }}</td>
-                            <td class="col-author">{{ post.author_name }}</td>
-                            <td class="col-time">{{ post.created_at[-5:-3] }}:{{ post.created_at[-2:] }}</td>
-                            <td class="col-views">{{ loop.index * 10 }}</td>
-                            <td class="col-like">{{ loop.index % 5 + 1 }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% if not posts %}
-                <div style="text-align: center; padding: 40px; color: #999;">
-                    아직 생성된 게시글이 없습니다.
-                </div>
-            {% endif %}
-        </div>
-
-        {% if detail_post %}
-        <div class="detail-shell">
-            <div class="detail-head">
-                <h1 class="detail-title">{{ detail_post.title }}</h1>
-                <div class="detail-meta">
-                    <span>게시판: {{ detail_post.board }}</span>
-                    <span>작성자: {{ detail_post.author_name }}</span>
-                    <span>시간: {{ detail_post.created_at }}</span>
-                    {% if detail_post.source_topic %}
-                    <span>주제: {{ detail_post.source_topic }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="detail-body">{{ detail_post.content }}</div>
-            <div class="detail-actions">
-                <button type="button">👍 추천</button>
-                <button type="button">👎 비추천</button>
-                <a href="{{ url_for('community.community_board', board_name=detail_post.board) }}">목록으로</a>
-            </div>
-        </div>
         {% endif %}
+
+        <div class="content-stack">
+            {% if detail_post %}
+            <div class="posts-section wide">
+                <div class="board-banner">
+                    <strong>⚖️ {{ detail_post.board }}</strong>
+                    <span>게시글 상세</span>
+                </div>
+            </div>
+            <div class="detail-shell">
+                <div class="detail-head">
+                    <div class="meta-pill">{{ detail_post.flair }}</div>
+                    <h1 class="detail-title">{{ detail_post.title }}</h1>
+                    <div class="detail-meta">
+                        <span>게시판: {{ detail_post.board }}</span>
+                        <span>작성자: {{ detail_post.author_name }}</span>
+                        <span>시간: {{ detail_post.created_at }}</span>
+                        <span>조회: {{ detail_post.view_count }}</span>
+                        <span>추천: {{ detail_post.upvote_count }}</span>
+                        {% if detail_post.source_topic %}
+                        <span>주제: {{ detail_post.source_topic }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-body">{{ detail_post.content }}</div>
+                <div class="detail-actions">
+                    <form method="post" action="{{ url_for('community.vote_post', post_id=detail_post.id) }}">
+                        <input type="hidden" name="vote_type" value="up">
+                        <button type="submit">👍 추천 ({{ detail_post.upvote_count }})</button>
+                    </form>
+                    <form method="post" action="{{ url_for('community.vote_post', post_id=detail_post.id) }}">
+                        <input type="hidden" name="vote_type" value="down">
+                        <button type="submit">👎 비추천 ({{ detail_post.downvote_count }})</button>
+                    </form>
+                    <a href="{{ url_for('community.community_board', board_name=detail_post.board) }}">목록으로</a>
+                </div>
+                <div class="detail-comments">
+                    <h3>댓글</h3>
+                    <div class="comment-item">
+                        ㄴ ㅇㅇ(211.55) : ㄹㅇㅋㅋ 이건 좀 선 넘었네
+                        <div class="comment-meta">10:14</div>
+                    </div>
+                    <div class="comment-item">
+                        ㄴ 성내구주민 : 꼬우면 성내구 오든가 ㅋ
+                        <div class="comment-meta">10:15</div>
+                    </div>
+                    <div class="comment-box">
+                        <input type="text" placeholder="댓글을 입력하세요... (엔터로 등록)">
+                        <button type="button">✏️ 등록</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 게시글 목록 -->
+            <div class="posts-section wide">
+                <div class="board-banner">
+                    <strong>⚖️ {% if detail_post %}{{ detail_post.board }}{% elif active_board %}{{ active_board }}{% elif active_sort == 'best' %}베스트{% else %}최신순{% endif %}</strong>
+                    <span>게시글 {{ posts|length }}개</span>
+                </div>
+                <div class="posts-title">📰 게시글 목록</div>
+                <table class="posts-table">
+                    <thead>
+                        <tr>
+                            <th class="col-num">번호</th>
+                            <th class="col-tag">말머리</th>
+                            <th class="col-board">게시판</th>
+                            <th class="col-title">제목</th>
+                            <th class="col-author">작성자</th>
+                            <th class="col-time">시간</th>
+                            <th class="col-views">조회</th>
+                            <th class="col-like">추천</th>
+                        </tr>
+                    </thead>
+                    <tbody id="posts-tbody">
+                        {% for post in posts %}
+                            <tr onclick="location.href='{{ url_for('community.community_post_detail', post_id=post.id) }}'">
+                                <td class="col-num">{{ posts|length - loop.index0 }}</td>
+                                <td class="col-tag"><span class="tag">{{ post.flair }}</span></td>
+                                <td class="col-board">{{ post.board }}</td>
+                                <td class="col-title">{{ post.title }}</td>
+                                <td class="col-author">{{ post.author_name }}</td>
+                                <td class="col-time">{{ post.created_at[11:16] if post.created_at else '' }}</td>
+                                <td class="col-views">{{ post.view_count }}</td>
+                                <td class="col-like">{{ post.upvote_count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if not posts %}
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        아직 생성된 게시글이 없습니다.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/community.js') }}"></script>

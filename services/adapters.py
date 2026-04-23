@@ -1,4 +1,4 @@
-from db import get_recent_community_posts, save_chat_history, save_community_post
+from db import get_recent_community_posts, save_chat_history, save_community_post, get_community_post, increment_community_post_view, vote_community_post
 from services.core_interfaces import ContextProvider, LLMClient, ChatHistorySaver, CommunityPostRepository
 from utils.context import generate_context, generate_context2
 
@@ -40,5 +40,14 @@ class SqliteCommunityPostRepository(CommunityPostRepository):
     def save(self, board, author_name, title, content, source_topic=None):
         return save_community_post(board, author_name, title, content, source_topic)
 
-    def get_recent(self, limit=30, board=None):
-        return get_recent_community_posts(limit=limit, board=board)
+    def get_recent(self, limit=30, board=None, sort='latest'):
+        return get_recent_community_posts(limit=limit, board=board, sort=sort)
+
+    def get_post(self, post_id):
+        return get_community_post(post_id)
+
+    def increment_post_view(self, post_id):
+        return increment_community_post_view(post_id)
+
+    def vote_post(self, post_id, vote_type):
+        return vote_community_post(post_id, vote_type)
