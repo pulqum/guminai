@@ -418,6 +418,116 @@ body {
     transform: rotate(180deg);
 }
 
+/* =======================================
+   커뮤니티 프로토타입 스타일
+======================================= */
+
+.community-container {
+    width: 100%;
+    max-width: 920px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background-color: #f6f7f5;
+    box-sizing: border-box;
+    padding: 20px;
+}
+
+.community-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2f6b48;
+    color: white;
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+
+.community-nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.pipeline-panel,
+.community-feed {
+    margin-top: 16px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.pipeline-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.pipeline-form-row input,
+.pipeline-form-row select {
+    border: 1px solid #c8d0c9;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.community-button {
+    border: none;
+    background-color: #2f6b48;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.community-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.run-status {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #3a3a3a;
+}
+
+.post-card {
+    border: 1px solid #e2e7e2;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background-color: #fcfcfc;
+}
+
+.post-meta {
+    color: #5a6b60;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.post-topic {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #3f4f45;
+}
+
+.empty-posts {
+    color: #606a63;
+}
+
+@media screen and (max-width: 768px) {
+    .community-container {
+        padding: 10px;
+    }
+
+    .community-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+}
+
 #questions-container {
     display: flex;
     flex-wrap: wrap;

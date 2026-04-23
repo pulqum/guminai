@@ -7,11 +7,13 @@ from setup import initialize
 from db import init_db, close_db
 from routes.auth import auth_bp
 from routes.chat import chat_bp
+from routes.community import community_bp
 from routes.admin import admin_bp
 from models.vector_store_manager import VectorStoreManager
 from models.completion_executor import CompletionExecutor
-from services.adapters import CompletionExecutorClient, VectorStoreContextProvider
+from services.adapters import CompletionExecutorClient, SqliteCommunityPostRepository, VectorStoreContextProvider
 from services.chat_service import ChatService
+from services.community_pipeline_service import CommunityPipelineService
 from services.conversation_store import FlaskSessionConversationStore
 
 # 초기 설정 및 로드
@@ -45,16 +47,23 @@ app.config['COMPLETION_EXECUTOR'] = completion_executor
 app.config['CONVERSATION_STORE'] = FlaskSessionConversationStore()
 app.config['CONTEXT_PROVIDER'] = VectorStoreContextProvider(vector_store_manager)
 app.config['LLM_CLIENT'] = CompletionExecutorClient(completion_executor)
+app.config['COMMUNITY_POST_REPOSITORY'] = SqliteCommunityPostRepository()
 app.config['CHAT_SERVICE'] = ChatService(
     app.config['CONTEXT_PROVIDER'],
     app.config['LLM_CLIENT'],
     app.config['CONVERSATION_STORE'],
     MAX_MEMORY_LENGTH,
 )
+app.config['COMMUNITY_PIPELINE_SERVICE'] = CommunityPipelineService(
+    app.config['CONTEXT_PROVIDER'],
+    app.config['LLM_CLIENT'],
+    app.config['COMMUNITY_POST_REPOSITORY'],
+)
 
 # 블루프린트 등록
 app.register_blueprint(auth_bp)
 app.register_blueprint(chat_bp)
+app.register_blueprint(community_bp)
 app.register_blueprint(admin_bp)
 
 # 데이터베이스 초기화

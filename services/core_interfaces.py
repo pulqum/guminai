@@ -35,3 +35,13 @@ class ChatHistorySaver(ABC):
     @abstractmethod
     def save(self, user_message, bot_response):
         pass
+
+
+class CommunityPostRepository(ABC):
+    @abstractmethod
+    def save(self, board, author_name, title, content, source_topic=None):
+        pass
+
+    @abstractmethod
+    def get_recent(self, limit=30, board=None):
+        pass

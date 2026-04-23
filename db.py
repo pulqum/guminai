@@ -38,6 +38,17 @@ def init_db():
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS community_posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                board TEXT NOT NULL,
+                author_name TEXT NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                source_topic TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         conn.commit()
     except Exception as e:
         logging.error(f"데이터베이스 초기화 중 오류 발생: {e}")
@@ -59,3 +70,59 @@ def save_chat_history(user_message, bot_response):
         db.commit()
     except Exception as e:
         logging.error(f"채팅 기록 저장 중 오류 발생: {e}")
+
+
+def save_community_post(board, author_name, title, content, source_topic=None):
+    """
+    커뮤니티 게시글을 저장하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            '''
+            INSERT INTO community_posts (board, author_name, title, content, source_topic)
+            VALUES (?, ?, ?, ?, ?)
+            ''',
+            (board, author_name, title, content, source_topic),
+        )
+        db.commit()
+        return cursor.lastrowid
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 저장 중 오류 발생: {e}")
+        return None
+
+
+def get_recent_community_posts(limit=30, board=None):
+    """
+    최근 커뮤니티 게시글을 조회하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        if board:
+            cursor.execute(
+                '''
+                SELECT id, board, author_name, title, content, source_topic, created_at
+                FROM community_posts
+                WHERE board = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                ''',
+                (board, limit),
+            )
+        else:
+            cursor.execute(
+                '''
+                SELECT id, board, author_name, title, content, source_topic, created_at
+                FROM community_posts
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                ''',
+                (limit,),
+            )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        logging.error(f"커뮤니티 게시글 조회 중 오류 발생: {e}")
+        return []

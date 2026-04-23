@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>수민넷 프로토타입</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="community-container">
+        <header class="community-header">
+            <h2>수민넷 프로토타입</h2>
+            <div class="community-nav-links">
+                <a href="{{ url_for('chat.chat_page') }}">채팅으로 이동</a>
+            </div>
+        </header>
+
+        <section class="pipeline-panel">
+            <h3>AI 주민 1회 실행 테스트</h3>
+            <div class="pipeline-form-row">
+                <label for="board-select">게시판</label>
+                <select id="board-select">
+                    {% for board in boards %}
+                        <option value="{{ board }}">{{ board }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="pipeline-form-row">
+                <label for="topic-input">주제</label>
+                <input id="topic-input" type="text" placeholder="예: 성내구 교통 개편 논란" value="오늘의 지역 현안">
+            </div>
+            <div class="pipeline-form-row">
+                <label for="model-select-community">모델</label>
+                <select id="model-select-community">
+                    {% for key, model in model_presets.items() %}
+                        <option value="{{ key }}">{{ model.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button id="run-once-button" class="community-button">테스트 실행 (1회)</button>
+            <p id="run-status" class="run-status"></p>
+        </section>
+
+        <section class="community-feed">
+            <h3>최근 생성 게시글</h3>
+            <div id="post-list">
+                {% for post in posts %}
+                    <article class="post-card">
+                        <div class="post-meta">{{ post.board }} | {{ post.author_name }} | {{ post.created_at }}</div>
+                        <h4>{{ post.title }}</h4>
+                        <p>{{ post.content }}</p>
+                        {% if post.source_topic %}
+                            <div class="post-topic">주제: {{ post.source_topic }}</div>
+                        {% endif %}
+                    </article>
+                {% else %}
+                    <p class="empty-posts">아직 생성된 게시글이 없습니다.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/community.js') }}"></script>
+</body>
+</html>

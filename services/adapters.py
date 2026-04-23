@@ -1,5 +1,5 @@
-from db import save_chat_history
-from services.core_interfaces import ContextProvider, LLMClient, ChatHistorySaver
+from db import get_recent_community_posts, save_chat_history, save_community_post
+from services.core_interfaces import ContextProvider, LLMClient, ChatHistorySaver, CommunityPostRepository
 from utils.context import generate_context, generate_context2
 
 
@@ -25,3 +25,11 @@ class CompletionExecutorClient(LLMClient):
 class SqliteChatHistorySaver(ChatHistorySaver):
     def save(self, user_message, bot_response):
         save_chat_history(user_message, bot_response)
+
+
+class SqliteCommunityPostRepository(CommunityPostRepository):
+    def save(self, board, author_name, title, content, source_topic=None):
+        return save_community_post(board, author_name, title, content, source_topic)
+
+    def get_recent(self, limit=30, board=None):
+        return get_recent_community_posts(limit=limit, board=board)
