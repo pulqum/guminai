@@ -6,11 +6,14 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/', methods=['GET', 'POST'])
 def index():
+    if session.get('authenticated'):
+        return redirect(url_for('community.community_page'))
+
     if request.method == 'POST':
         password = request.form.get('password')
         if password == CHAT_PASSWORD:
             session['authenticated'] = True
-            return redirect(url_for('chat.chat_page'))
+            return redirect(url_for('community.community_page'))
         else:
             return render_template('index.html', error='비밀번호가 올바르지 않습니다.')
     return render_template('index.html')

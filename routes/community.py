@@ -9,16 +9,8 @@ def _require_auth():
     return True
 
 
-@community_bp.route('/community')
-def community_page():
-    if not _require_auth():
-        return redirect(url_for('auth.index'))
-
-    repository = current_app.config.get('COMMUNITY_POST_REPOSITORY')
-    posts = repository.get_recent(limit=30) if repository else []
-    model_presets = current_app.config.get('MODEL_PRESETS', {})
-
-    boards = [
+def _get_board_list():
+    return [
         '통합 광장',
         '정치',
         '주식/경제',
@@ -31,7 +23,57 @@ def community_page():
         '공무원',
     ]
 
-    return render_template('community.html', posts=posts, boards=boards, model_presets=model_presets)
+
+def _render_community_page(active_board=None, detail_post=None):
+    repository = current_app.config.get('COMMUNITY_POST_REPOSITORY')
+    agent_repository = current_app.config.get('AGENT_REPOSITORY')
+
+    posts = repository.get_recent(limit=100, board=active_board) if repository else []
+    model_presets = current_app.config.get('MODEL_PRESETS', {})
+    agents = agent_repository.get_all_agents(status=1, limit=100) if agent_repository else []
+    boards = _get_board_list()
+
+    return render_template(
+        'community.html',
+        posts=posts,
+        boards=boards,
+        model_presets=model_presets,
+        agents=agents,
+        active_board=active_board or '통합 광장',
+        detail_post=detail_post,
+    )
+
+
+@community_bp.route('/community')
+def community_page():
+    if not _require_auth():
+        return redirect(url_for('auth.index'))
+    return _render_community_page(active_board='통합 광장')
+
+
+@community_bp.route('/community/board/<board_name>')
+def community_board(board_name):
+    if not _require_auth():
+        return redirect(url_for('auth.index'))
+
+    return _render_community_page(active_board=board_name)
+
+
+@community_bp.route('/community/post/<int:post_id>')
+def community_post_detail(post_id):
+    if not _require_auth():
+        return redirect(url_for('auth.index'))
+
+    repository = current_app.config.get('COMMUNITY_POST_REPOSITORY')
+    post = None
+    if repository:
+        recent_posts = repository.get_recent(limit=500)
+        for item in recent_posts:
+            if item.get('id') == post_id:
+                post = item
+                break
+
+    return _render_community_page(active_board=(post['board'] if post else '통합 광장'), detail_post=post)
 
 
 @community_bp.route('/community/run_once', methods=['POST'])

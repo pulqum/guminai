@@ -2,14 +2,14 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>비밀번호 입력</title>
+    <title>수민마루 입장</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 뷰포트 메타 태그 추가 -->
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}"> <!-- 파비콘 설정 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div class="login-container">
-        <h2>채팅에 입장하려면<br>비밀번호를 입력하세요</h2>
+        <h2>수민마루에 입장하려면<br>비밀번호를 입력하세요</h2>
         {% if error %}
             <p class="error">{{ error }}</p>
         {% endif %}

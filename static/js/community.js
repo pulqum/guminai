@@ -1,164 +1,211 @@
+let currentPost = null;
+
 document.addEventListener('DOMContentLoaded', function () {
-    const runButton = document.getElementById('run-once-button');
-    const generateBatchButton = document.getElementById('generate-batch-button');
-    const boardSelect = document.getElementById('board-select');
-    const topicInput = document.getElementById('topic-input');
-    const agentSelect = document.getElementById('agent-select-community');
-    const runStatus = document.getElementById('run-status');
-    const batchStatus = document.getElementById('batch-status');
-    const postList = document.getElementById('post-list');
-    const batchNameInput = document.getElementById('batch-name-input');
-    const agentCountInput = document.getElementById('agent-count-input');
-    const citizenTypeSelect = document.getElementById('citizen-type-select');
-    const batchResultDiv = document.getElementById('batch-result');
-
-    function renderPost(post) {
-        const card = document.createElement('article');
-        card.className = 'post-card';
-
-        const meta = document.createElement('div');
-        meta.className = 'post-meta';
-        const createdAt = post.created_at || '방금 생성됨';
-        meta.textContent = `${post.board} | ${post.author_name} | ${createdAt}`;
-
-        const title = document.createElement('h4');
-        title.textContent = post.title;
-
-        const content = document.createElement('p');
-        content.textContent = post.content;
-
-        card.appendChild(meta);
-        card.appendChild(title);
-        card.appendChild(content);
-
-        if (post.source_topic) {
-            const topic = document.createElement('div');
-            topic.className = 'post-topic';
-            topic.textContent = `주제: ${post.source_topic}`;
-            card.appendChild(topic);
-        }
-
-        return card;
-    }
-
-    // 에이전트 리스트 로드
-    async function loadAgents() {
-        try {
-            const response = await fetch('/community/agents');
-            const data = await response.json();
-            if (data.agents && data.agents.length > 0) {
-                data.agents.forEach(agent => {
-                    const option = document.createElement('option');
-                    option.value = agent.id;
-                    option.textContent = `${agent.nickname} (영향력: ${agent.influence})`;
-                    agentSelect.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('에이전트 리스트 로드 실패:', error);
-        }
-    }
-
-    // 배치 생성
-    async function generateBatch() {
-        const citizenTypes = Array.from(citizenTypeSelect.selectedOptions).map(o => parseInt(o.value));
-        const payload = {
-            batch_name: batchNameInput.value.trim() || 'batch_default',
-            count: parseInt(agentCountInput.value) || 10,
-            region_code: 0,
-            citizen_types: citizenTypes.length > 0 ? citizenTypes : [1, 2, 3],
-            sumin_jobs: ['직장인', '학생', '공무원'],
-            context_topic: '수민넷 커뮤니티',
-        };
-
-        generateBatchButton.disabled = true;
-        batchStatus.textContent = '배치 생성 중...';
-        batchResultDiv.style.display = 'none';
-
-        try {
-            const response = await fetch('/community/generate_batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || '배치 생성 실패');
-            }
-
-            // 결과 표시
-            document.getElementById('batch-id').textContent = data.batch_id;
-            document.getElementById('created-count').textContent = data.created_count;
-            document.getElementById('total-count').textContent = data.total_requested;
-
-            const agentListDiv = document.getElementById('created-agents');
-            agentListDiv.innerHTML = '';
-            data.created_agents.forEach(agent => {
-                const item = document.createElement('p');
-                item.textContent = `✓ ${agent.nickname} (ID: ${agent.id})`;
-                agentListDiv.appendChild(item);
-            });
-
-            batchResultDiv.style.display = 'block';
-            batchStatus.textContent = `완료: ${data.created_count}/${data.total_requested} 에이전트 생성됨`;
-
-            // 에이전트 리스트 새로고침
-            agentSelect.innerHTML = '<option value="">- 에이전트 선택 -</option>';
-            loadAgents();
-        } catch (error) {
-            batchStatus.textContent = `오류: ${error.message}`;
-        } finally {
-            generateBatchButton.disabled = false;
-        }
-    }
-
-    async function runPipelineOnce() {
-        const payload = {
-            board: boardSelect.value,
-            topic: topicInput.value.trim() || '오늘의 주요 이슈',
-            agent_id: agentSelect.value,
-        };
-
-        if (!payload.agent_id) {
-            runStatus.textContent = '오류: 에이전트를 선택해주세요';
-            return;
-        }
-
-        runButton.disabled = true;
-        runStatus.textContent = '파이프라인 실행 중...';
-
-        try {
-            const response = await fetch('/community/run_once', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || '실행 실패');
-            }
-
-            const emptyMessage = postList.querySelector('.empty-posts');
-            if (emptyMessage) {
-                emptyMessage.remove();
-            }
-
-            const card = renderPost(data.post);
-            postList.prepend(card);
-            runStatus.textContent = '완료: 게시글 1건 생성됨';
-        } catch (error) {
-            runStatus.textContent = `오류: ${error.message}`;
-        } finally {
-            runButton.disabled = false;
-        }
-    }
-
-    // 초기 로드
     loadAgents();
-
-    // 이벤트 리스너
-    runButton.addEventListener('click', runPipelineOnce);
-    generateBatchButton.addEventListener('click', generateBatch);
 });
+
+// 에이전트 리스트 로드
+async function loadAgents() {
+    try {
+        const response = await fetch('/community/agents');
+        const data = await response.json();
+        const select = document.getElementById('agent-select-community');
+        select.innerHTML = '<option value="">- 에이전트 선택 -</option>';
+        
+        if (data.agents && data.agents.length > 0) {
+            data.agents.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = `${agent.nickname} (영향력: ${agent.influence})`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('에이전트 리스트 로드 실패:', error);
+    }
+}
+
+// 배치 생성
+async function generateBatch() {
+    const batchName = document.getElementById('batch-name-input').value.trim() || 'batch_1';
+    const count = parseInt(document.getElementById('agent-count-input').value) || 5;
+    const citizenTypeSelect = document.getElementById('citizen-type-select');
+    const citizenTypes = Array.from(citizenTypeSelect.selectedOptions).map(o => parseInt(o.value));
+    const status = document.getElementById('batch-status');
+    const result = document.getElementById('batch-result');
+
+    if (!citizenTypes.length) {
+        status.textContent = '⚠️ 시민 유형을 선택하세요';
+        return;
+    }
+
+    status.textContent = '⏳ 배치 생성 중...';
+    result.style.display = 'none';
+
+    try {
+        const response = await fetch('/community/generate_batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                batch_name: batchName,
+                count: count,
+                region_code: 0,
+                citizen_types: citizenTypes,
+                sumin_jobs: ['직장인', '학생', '공무원', '자영업자', '전문가'],
+                context_topic: '수민넷 커뮤니티'
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || '배치 생성 실패');
+        }
+
+        document.getElementById('created-count').textContent = data.created_count;
+        document.getElementById('total-count').textContent = data.total_requested;
+        result.style.display = 'block';
+        status.textContent = `✓ 완료: 배치 ID ${data.batch_id}`;
+
+        // 에이전트 리스트 새로고침
+        await loadAgents();
+    } catch (error) {
+        status.textContent = `❌ ${error.message}`;
+        console.error(error);
+    }
+}
+
+// 1회 테스트 실행
+async function runPipelineOnce() {
+    const agentId = document.getElementById('agent-select-community').value;
+    const board = document.getElementById('board-select').value;
+    const topic = document.getElementById('topic-input').value.trim();
+    const status = document.getElementById('run-status');
+
+    if (!agentId) {
+        status.textContent = '⚠️ 에이전트를 선택하세요';
+        return;
+    }
+
+    status.textContent = '⏳ 실행 중...';
+
+    try {
+        const response = await fetch('/community/run_once', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                board: board,
+                topic: topic,
+                agent_id: agentId
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || '실행 실패');
+        }
+
+        status.textContent = '✓ 게시글 생성됨!';
+        
+        // 테이블에 새 행 추가
+        const tbody = document.getElementById('posts-tbody');
+        const post = data.post;
+        const row = document.createElement('tr');
+        row.onclick = function() { openPostDetail(this, 1); };
+        row.innerHTML = `
+            <td class="col-num">1</td>
+            <td class="col-tag"><span class="tag">${post.board.substring(0, 2)}</span></td>
+            <td class="col-title">${post.title}</td>
+            <td class="col-author">${post.author_name}</td>
+            <td class="col-time">방금</td>
+            <td class="col-views">1</td>
+            <td class="col-like">0</td>
+        `;
+        row.dataset.post = JSON.stringify(post);
+        tbody.insertBefore(row, tbody.firstChild);
+
+        // 행 번호 재계산
+        updateRowNumbers();
+    } catch (error) {
+        status.textContent = `❌ ${error.message}`;
+        console.error(error);
+    }
+}
+
+// 게시글 상세 보기
+function openPostDetail(rowElement, index) {
+    const modal = document.getElementById('post-modal');
+    const cells = rowElement.querySelectorAll('td');
+    
+    let post = null;
+    if (rowElement.dataset.post) {
+        post = JSON.parse(rowElement.dataset.post);
+    } else {
+        // 테이블에서 직접 파싱
+        post = {
+            board: cells[1].textContent || '게시판',
+            title: cells[2].textContent,
+            author_name: cells[3].textContent,
+            created_at: cells[4].textContent,
+            content: '게시글 내용을 불러올 수 없습니다.',
+            id: index
+        };
+    }
+
+    document.getElementById('modal-title').textContent = post.title;
+    document.getElementById('modal-meta').innerHTML = `
+        <span>[${post.board}]</span>
+        <span> | ${post.author_name}</span>
+        <span> | ${post.created_at}</span>
+    `;
+    document.getElementById('modal-body').textContent = post.content;
+    
+    currentPost = post;
+    modal.classList.add('active');
+}
+
+// 게시글 상세 닫기
+function closePostDetail() {
+    const modal = document.getElementById('post-modal');
+    modal.classList.remove('active');
+}
+
+// 모달 외부 클릭 시 닫기
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('post-modal');
+    if (event.target === modal) {
+        modal.classList.remove('active');
+    }
+});
+
+// 추천/비추천
+function votePost(type) {
+    const modal = document.getElementById('post-modal');
+    if (type === 'up') {
+        alert('추천했습니다! 👍');
+    } else {
+        alert('비추천했습니다. 👎');
+    }
+}
+
+// 필터
+function filterPosts(type) {
+    console.log('필터:', type);
+    // 향후 구현: 게시글 필터링
+}
+
+// 행 번호 업데이트
+function updateRowNumbers() {
+    const tbody = document.getElementById('posts-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((row, index) => {
+        row.querySelector('.col-num').textContent = rows.length - index;
+    });
+}
+
+window.loadAgents = loadAgents;
+window.generateBatch = generateBatch;
+window.runPipelineOnce = runPipelineOnce;
+window.openPostDetail = openPostDetail;
+window.closePostDetail = closePostDetail;
+window.votePost = votePost;
+window.filterPosts = filterPosts;
