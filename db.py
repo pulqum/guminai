@@ -49,6 +49,38 @@ def init_db():
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS agents (
+                id TEXT PRIMARY KEY,
+                nickname TEXT NOT NULL,
+                region_code INTEGER,
+                citizen_type INTEGER,
+                sumin_job TEXT,
+                influence INTEGER DEFAULT 0,
+                activity_freq REAL DEFAULT 0.5,
+                active_start INTEGER DEFAULT 0,
+                active_end INTEGER DEFAULT 23,
+                status INTEGER DEFAULT 1,
+                persona_json TEXT,
+                batch_id TEXT,
+                created_from TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS agent_relations (
+                source_id TEXT NOT NULL,
+                target_id TEXT NOT NULL,
+                relation_type INTEGER,
+                affinity_score REAL DEFAULT 0.0,
+                reason TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (source_id, target_id),
+                FOREIGN KEY (source_id) REFERENCES agents(id),
+                FOREIGN KEY (target_id) REFERENCES agents(id)
+            )
+        ''')
         conn.commit()
     except Exception as e:
         logging.error(f"데이터베이스 초기화 중 오류 발생: {e}")
@@ -126,3 +158,121 @@ def get_recent_community_posts(limit=30, board=None):
     except Exception as e:
         logging.error(f"커뮤니티 게시글 조회 중 오류 발생: {e}")
         return []
+
+
+def save_agent(agent_id, nickname, region_code, citizen_type, sumin_job, persona_json, batch_id=None, created_from='manual'):
+    """
+    에이전트를 저장하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            '''
+            INSERT OR REPLACE INTO agents 
+            (id, nickname, region_code, citizen_type, sumin_job, persona_json, batch_id, created_from, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (agent_id, nickname, region_code, citizen_type, sumin_job, persona_json, batch_id, created_from, datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+        )
+        db.commit()
+        return agent_id
+    except Exception as e:
+        logging.error(f"에이전트 저장 중 오류 발생: {e}")
+        return None
+
+
+def get_agent(agent_id):
+    """
+    에이전트를 조회하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM agents WHERE id = ?', (agent_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        logging.error(f"에이전트 조회 중 오류 발생: {e}")
+        return None
+
+
+def get_agents_by_batch(batch_id):
+    """
+    배치 ID로 에이전트 목록을 조회하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM agents WHERE batch_id = ? ORDER BY created_at DESC', (batch_id,))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        logging.error(f"배치 에이전트 조회 중 오류 발생: {e}")
+        return []
+
+
+def get_all_agents(status=1):
+    """
+    모든 에이전트를 조회하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM agents WHERE status = ? ORDER BY created_at DESC LIMIT 100', (status,))
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        logging.error(f"에이전트 목록 조회 중 오류 발생: {e}")
+        return []
+
+
+def delete_agents_by_batch(batch_id):
+    """
+    배치 ID로 에이전트를 일괄 삭제하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM agents WHERE batch_id = ?', (batch_id,))
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"배치 에이전트 삭제 중 오류 발생: {e}")
+        return False
+
+
+def save_agent_relation(source_id, target_id, relation_type, affinity_score, reason=None):
+    """
+    에이전트 간 관계를 저장하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            '''
+            INSERT OR REPLACE INTO agent_relations (source_id, target_id, relation_type, affinity_score, reason)
+            VALUES (?, ?, ?, ?, ?)
+            ''',
+            (source_id, target_id, relation_type, affinity_score, reason),
+        )
+        db.commit()
+        return True
+    except Exception as e:
+        logging.error(f"에이전트 관계 저장 중 오류 발생: {e}")
+        return False
+
+
+def get_agent_relation(source_id, target_id):
+    """
+    에이전트 간 관계를 조회하는 함수
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM agent_relations WHERE source_id = ? AND target_id = ?', (source_id, target_id))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        logging.error(f"에이전트 관계 조회 중 오류 발생: {e}")
+        return None

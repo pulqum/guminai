@@ -20,6 +20,15 @@ class CompletionExecutorClient(LLMClient):
 
     def generate(self, request_data):
         return self.completion_executor.execute(request_data)
+    
+    def complete(self, messages, model_preset='default', max_tokens=1000):
+        """messages 기반의 완성 생성 래퍼"""
+        # 간단한 요청 데이터 구성
+        request_data = {
+            'messages': messages,
+            'maxTokens': max_tokens
+        }
+        return self.completion_executor.execute(request_data)
 
 
 class SqliteChatHistorySaver(ChatHistorySaver):

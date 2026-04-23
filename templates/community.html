@@ -17,6 +17,35 @@
         </header>
 
         <section class="pipeline-panel">
+            <h3>AI 주민 배치 생성</h3>
+            <div class="pipeline-form-row">
+                <label for="batch-name-input">배치 이름</label>
+                <input id="batch-name-input" type="text" placeholder="예: 테스트_배치_1" value="batch_1">
+            </div>
+            <div class="pipeline-form-row">
+                <label for="agent-count-input">생성할 에이전트 수</label>
+                <input id="agent-count-input" type="number" min="1" max="100" value="5">
+            </div>
+            <div class="pipeline-form-row">
+                <label for="citizen-type-select">시민 유형</label>
+                <select id="citizen-type-select" multiple>
+                    <option value="1" selected>일반시민</option>
+                    <option value="2" selected>관심층</option>
+                    <option value="3" selected>활동가</option>
+                </select>
+                <small>Ctrl+Click으로 다중 선택</small>
+            </div>
+            <button id="generate-batch-button" class="community-button">배치 생성</button>
+            <p id="batch-status" class="run-status"></p>
+            <div id="batch-result" class="batch-result-section" style="display:none;">
+                <h4>배치 생성 결과</h4>
+                <p>배치 ID: <span id="batch-id"></span></p>
+                <p>생성됨: <span id="created-count"></span> / <span id="total-count"></span></p>
+                <div id="created-agents" class="agent-list"></div>
+            </div>
+        </section>
+
+        <section class="pipeline-panel">
             <h3>AI 주민 1회 실행 테스트</h3>
             <div class="pipeline-form-row">
                 <label for="board-select">게시판</label>
@@ -31,11 +60,9 @@
                 <input id="topic-input" type="text" placeholder="예: 성내구 교통 개편 논란" value="오늘의 지역 현안">
             </div>
             <div class="pipeline-form-row">
-                <label for="model-select-community">모델</label>
-                <select id="model-select-community">
-                    {% for key, model in model_presets.items() %}
-                        <option value="{{ key }}">{{ model.display_name }}</option>
-                    {% endfor %}
+                <label for="agent-select-community">에이전트</label>
+                <select id="agent-select-community">
+                    <option value="">- 에이전트 선택 -</option>
                 </select>
             </div>
             <button id="run-once-button" class="community-button">테스트 실행 (1회)</button>

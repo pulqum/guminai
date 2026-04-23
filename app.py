@@ -2,6 +2,7 @@
 from flask import Flask
 from flask_cors import CORS
 import logging
+from importlib import import_module
 from config import LOG_LEVEL, SECRET_KEY, CLOVA_HOST, CLOVA_API_KEY, CLOVA_PRIMARY_KEY, CLOVA_REQUEST_ID, MAX_MEMORY_LENGTH
 from setup import initialize
 from db import init_db, close_db
@@ -12,8 +13,10 @@ from routes.admin import admin_bp
 from models.vector_store_manager import VectorStoreManager
 from models.completion_executor import CompletionExecutor
 from services.adapters import CompletionExecutorClient, SqliteCommunityPostRepository, VectorStoreContextProvider
+from services.agent_repository_adapter import SqliteAgentRepository
 from services.chat_service import ChatService
 from services.community_pipeline_service import CommunityPipelineService
+from services.agent_generator_service import AgentGeneratorService
 from services.conversation_store import FlaskSessionConversationStore
 
 # 초기 설정 및 로드
@@ -48,6 +51,7 @@ app.config['CONVERSATION_STORE'] = FlaskSessionConversationStore()
 app.config['CONTEXT_PROVIDER'] = VectorStoreContextProvider(vector_store_manager)
 app.config['LLM_CLIENT'] = CompletionExecutorClient(completion_executor)
 app.config['COMMUNITY_POST_REPOSITORY'] = SqliteCommunityPostRepository()
+app.config['AGENT_REPOSITORY'] = SqliteAgentRepository(import_module('db'))
 app.config['CHAT_SERVICE'] = ChatService(
     app.config['CONTEXT_PROVIDER'],
     app.config['LLM_CLIENT'],
@@ -58,6 +62,11 @@ app.config['COMMUNITY_PIPELINE_SERVICE'] = CommunityPipelineService(
     app.config['CONTEXT_PROVIDER'],
     app.config['LLM_CLIENT'],
     app.config['COMMUNITY_POST_REPOSITORY'],
+)
+app.config['AGENT_GENERATOR_SERVICE'] = AgentGeneratorService(
+    app.config['AGENT_REPOSITORY'],
+    app.config['LLM_CLIENT'],
+    app.config['CONTEXT_PROVIDER'],
 )
 
 # 블루프린트 등록
